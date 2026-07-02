@@ -1,0 +1,64 @@
+{
+  "name": "racevision-overlay",
+  "version": "0.1.0",
+  "description": "RaceVision iRacing Overlay",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron . --dev",
+    "start:prod": "electron .",
+    "build:frontend": "npm run build --prefix frontend",
+    "build:backend": "\"C:\\Users\\Baile\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe\" -m PyInstaller build.spec --distpath backend-dist --workpath build-tmp --noconfirm --clean",
+    "build": "npm run build:frontend && npm run build:backend && npx electron-builder build --win",
+    "dist": "npm run build"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.racevision.overlay",
+    "productName": "RaceVision Overlay",
+    "copyright": "Copyright 2025",
+    "directories": {
+      "output": "release"
+    },
+    "asar": true,
+    "files": [
+      "electron/**/*",
+      "frontend/dist/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "backend-dist/racevision-backend",
+        "to": "backend"
+      }
+    ],
+    "win": {
+      "icon": "build-assets/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "RaceVision Overlay",
+      "deleteAppDataOnUninstall": false
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "YOUR_GITHUB_USERNAME",
+      "repo": "racevision-overlay",
+      "releaseType": "release"
+    }
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  }
+}

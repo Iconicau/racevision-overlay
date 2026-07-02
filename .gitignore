@@ -1,0 +1,24 @@
+# Node
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Build outputs
+backend-dist/
+build-tmp/
+release/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+
+# Database & local secrets
+*.db
+.env
+
+# OS
+.DS_Store
+Thumbs.db
