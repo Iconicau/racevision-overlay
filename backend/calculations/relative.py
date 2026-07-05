@@ -8,7 +8,7 @@ from collections import deque
 from backend.state.race_state import RaceState, RelativeCar
 
 _FALLBACK_LAP_TIME = 90.0
-_GAP_SMOOTH = 3  # median window (ticks) — kills single-tick SDK spikes at line crossings
+_GAP_SMOOTH = 7  # median window (ticks) — longer window survives multi-tick SDK spikes at S/F
 
 
 class RelativeCalculator:
@@ -49,24 +49,30 @@ class RelativeCalculator:
 
         gapped: list[tuple[float, RelativeCar]] = []
         for car in state.cars:
+            # pct-based gap is always computed — used as fallback and sanity check.
+            # Using laps_completed + lap_dist_pct as a continuous position handles the
+            # lap-crossing window correctly when the player and car are on different laps.
+            car_pos    = car.laps_completed + car.lap_dist_pct
+            player_pos = player.laps_completed + player_pct
+            delta_pos  = car_pos - player_pos
+            # Clamp to ±0.5 lap to give physical proximity (not race gap)
+            if delta_pos > 0.5:
+                delta_pos -= 1.0
+            elif delta_pos < -0.5:
+                delta_pos += 1.0
+            pct_gap = delta_pos * ref_lap_time
+
             if (player_est > 0 and car.est_time > 0
                     and car.laps_completed == player.laps_completed
                     and car.car_class == player_class):
-                # est_time-based: accurate for same-class same-lap gaps.
+                # est_time-based: more precise for same-class same-lap gaps.
                 # CarIdxEstTime = seconds elapsed in the current lap (0 at S/F, rising).
-                # A car further around the track has a higher est_time than the player,
-                # so (car.est_time - player_est) > 0 means the car is ahead. ✓
-                # We keep the laps_completed == constraint deliberately: est_time comparison
-                # only makes sense within the same lap.  Lap-down cars use pct-based gap
-                # so they show physical proximity, not a misleading "-90s" race gap.
-                raw_gap = car.est_time - player_est
+                # Sanity-check against pct_gap: if they disagree by more than 40% of a lap,
+                # the SDK's est_time has a transient spike — fall back to pct_gap.
+                est_gap = car.est_time - player_est
+                raw_gap = est_gap if abs(est_gap - pct_gap) < ref_lap_time * 0.4 else pct_gap
             else:
-                # pct-based: gives physical track proximity regardless of class or lap count.
-                # Handles cross-class cars and same-class lap-down/up cars correctly.
-                delta_pct = (car.lap_dist_pct - player_pct) % 1.0
-                if delta_pct > 0.5:
-                    delta_pct -= 1.0
-                raw_gap = delta_pct * ref_lap_time
+                raw_gap = pct_gap
 
             # 3-tick median filter — absorbs the brief spike that can occur when the
             # SDK's est_time and laps_completed update in slightly different frames.

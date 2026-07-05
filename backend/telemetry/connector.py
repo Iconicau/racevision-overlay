@@ -116,6 +116,11 @@ class TelemetryConnector:
                 self._last_cars = {}
                 self._last_valid_tyre = TyreState()
                 self._ir.shutdown()
+                # Notify frontend so it shows "offline" instead of freezing on last state
+                try:
+                    await self._callback(RaceState(connected=False))
+                except Exception:
+                    pass
                 await asyncio.sleep(RECONNECT_INTERVAL)
                 continue
 

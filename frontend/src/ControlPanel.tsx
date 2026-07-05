@@ -122,10 +122,11 @@ export function ControlPanel() {
     window.electronAPI?.exitEditMode?.();
   };
 
-  // If overlay signals edit mode exited (e.g. user pressed Escape there), sync button
+  // Sync edit state from overlay signals (Escape, Ctrl+Alt+E, or overlay buttons)
   useEffect(() => {
     window.electronAPI?.onExitEditMode?.(() => setIsEditing(false));
     window.electronAPI?.onEnterEditMode?.(() => setIsEditing(true));
+    window.electronAPI?.onToggleEditMode?.(() => setIsEditing(prev => !prev));
   }, []);
 
   const widgetDef = WIDGET_REGISTRY.find((w) => w.id === selected);
@@ -257,6 +258,8 @@ interface DisplayInfo {
   isPrimary: boolean;
 }
 
+type UpdateStatus = "idle" | "checking" | "up-to-date" | "available" | "downloading" | "ready" | "error";
+
 function SystemPanel({ isEditing, onEnterEdit, onExitEdit, onReset, settings, save }: {
   isEditing: boolean;
   onEnterEdit: () => void;
@@ -268,6 +271,10 @@ function SystemPanel({ isEditing, onEnterEdit, onExitEdit, onReset, settings, sa
   const [confirmReset, setConfirmReset] = useState(false);
   const [displays, setDisplays]         = useState<DisplayInfo[]>([]);
   const [selectedDisplayId, setSelectedDisplayId] = useState<number>(0);
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus>("idle");
+  const [updateVersion, setUpdateVersion] = useState("");
+  const [updatePercent, setUpdatePercent] = useState(0);
+  const [updateError, setUpdateError]   = useState("");
 
   useEffect(() => {
     const saved = localStorage.getItem("racevision-overlay-display");
@@ -277,6 +284,13 @@ function SystemPanel({ isEditing, onEnterEdit, onExitEdit, onReset, settings, sa
     if (!api?.getDisplays) return;
     api.getDisplays().then((list: DisplayInfo[]) => {
       if (list?.length) setDisplays(list);
+    });
+
+    api?.onUpdateStatus?.((data: { status: string; version?: string; percent?: number; message?: string }) => {
+      setUpdateStatus(data.status as UpdateStatus);
+      if (data.version)             setUpdateVersion(data.version);
+      if (data.percent !== undefined) setUpdatePercent(data.percent);
+      if (data.message)             setUpdateError(data.message);
     });
   }, []);
 
@@ -431,6 +445,45 @@ function SystemPanel({ isEditing, onEnterEdit, onExitEdit, onReset, settings, sa
             options={[{ value: "litres", label: "Litres" }, { value: "gallons", label: "Gallons" }]}
             onChange={(v) => save({ fuel_unit: v as "litres" | "gallons" })}
           />
+        </div>
+      </Section>
+
+      {/* Updates */}
+      <Section title="Updates">
+        <div className="flex items-center justify-between p-4 rounded-xl bg-surface-raised border border-surface-border">
+          <div>
+            <div className="text-sm font-semibold text-data-primary">
+              {updateStatus === "ready"       ? `v${updateVersion} ready to install` :
+               updateStatus === "available"   ? `v${updateVersion} available` :
+               updateStatus === "downloading" ? `Downloading… ${updatePercent}%` :
+               updateStatus === "checking"    ? "Checking for updates…" :
+               updateStatus === "up-to-date"  ? "You're up to date" :
+               updateStatus === "error"       ? "Update error" :
+               "RaceVision Overlay"}
+            </div>
+            {updateStatus === "error" && (
+              <div className="text-xs text-status-red mt-0.5">{updateError}</div>
+            )}
+            {updateStatus === "up-to-date" && (
+              <div className="text-xs text-data-muted mt-0.5">No updates available</div>
+            )}
+          </div>
+          {updateStatus === "ready" ? (
+            <button
+              onClick={() => (window as any).electronAPI?.installUpdate?.()}
+              className="px-3 py-1.5 rounded-lg bg-status-green/20 border border-status-green/40 text-status-green text-xs font-semibold hover:bg-status-green/30 transition-colors"
+            >
+              Restart & Install
+            </button>
+          ) : (
+            <button
+              onClick={() => { setUpdateStatus("checking"); (window as any).electronAPI?.checkForUpdate?.(); }}
+              disabled={updateStatus === "checking" || updateStatus === "downloading"}
+              className="px-3 py-1.5 rounded-lg bg-surface-border text-data-secondary text-xs font-semibold hover:text-data-primary transition-colors disabled:opacity-40"
+            >
+              {updateStatus === "downloading" ? `${updatePercent}%` : "Check for Updates"}
+            </button>
+          )}
         </div>
       </Section>
     </div>

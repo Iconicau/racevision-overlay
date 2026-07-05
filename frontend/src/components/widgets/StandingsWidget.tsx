@@ -376,7 +376,7 @@ export function StandingsWidget({ standings, connected, sessionType, class_sof }
 
   return (
     <div className="flex flex-col">
-      <div className="flex flex-col py-1 px-1" style={{ gap: sc.rowGap * 3 }}>
+      <div className="flex flex-col py-1 px-1" style={{ gap: sc.rowGap * 5 }}>
         {!connected || standings.length === 0 ? (
           <div className="px-3 py-6 text-center text-data-muted" style={{ fontSize: sc.fsName }}>
             {connected ? "Waiting for cars…" : "Waiting for iRacing…"}
@@ -427,17 +427,23 @@ function ClassBox({ cls, color, cars, totalCars, gi, sc, isQuali, gridCols,
   return (
     <div
       className="rounded-lg overflow-hidden flex-shrink-0"
-      style={{ background: "rgb(var(--rv-surface-raised) / 0.96)", border: `1px solid ${color}55` }}
+      style={{
+        background: "rgb(var(--rv-surface-raised) / 0.96)",
+        border: `1px solid ${color}45`,
+        borderTop: `3px solid ${color}`,
+      }}
     >
       {/* Class header */}
-      <div className="flex items-center gap-1.5"
+      <div className="flex items-center gap-2"
         style={{
           padding: `${sc.hdrPy}px ${sc.hdrPx}px`,
-          background: `linear-gradient(90deg, ${color}35 0%, ${color}18 60%, ${color}08 100%)`,
-          borderBottom: `1px solid ${color}45`,
+          background: `linear-gradient(90deg, ${color}42 0%, ${color}22 60%, ${color}08 100%)`,
+          borderBottom: `1px solid ${color}50`,
         }}>
-        <div className="rounded-sm flex-shrink-0" style={{ width: 5, height: sc.fsHeader + 4, backgroundColor: color }} />
-        <span className="font-black tracking-wider" style={{ color, fontSize: sc.fsHeader }}>{cls}</span>
+        <div className="flex items-center rounded flex-shrink-0"
+          style={{ padding: `2px 6px`, background: color + "28", border: `1px solid ${color}65` }}>
+          <span className="font-black tracking-wider" style={{ color, fontSize: sc.fsHeader }}>{cls}</span>
+        </div>
         {showLap && (
           <span className="text-data-muted font-medium" style={{ fontSize: sc.fsLabel }}>Lap {currentLap}</span>
         )}
@@ -462,7 +468,7 @@ function ClassBox({ cls, color, cars, totalCars, gi, sc, isQuali, gridCols,
 
       {/* Column labels — dynamic, driven by activeDriverFields */}
       <div className="grid"
-        style={{ gridTemplateColumns: gridCols, gap: "0 4px", padding: `2px ${sc.rowPx}px`, borderBottom: `1px solid ${color}20` }}>
+        style={{ gridTemplateColumns: gridCols, gap: "0 4px", padding: `2px ${sc.rowPx}px`, borderBottom: `1px solid ${color}28`, background: `${color}0c` }}>
         {activeDriverFields.map(id => {
           const label = fieldHeaderLabel(id, isQuali);
           const align = RIGHT_ALIGN_FIELDS.has(id) ? "text-right"
@@ -480,7 +486,7 @@ function ClassBox({ cls, color, cars, totalCars, gi, sc, isQuali, gridCols,
         {cars.map((car, i) => (
           <div key={car.car_idx}>
             {playerPinned && i === cars.length - 1 && (
-              <div className="border-t border-dashed my-1" style={{ borderColor: `${color}40` }} />
+              <div className="my-1 mx-1" style={{ borderTop: `1px dashed ${color}60` }} />
             )}
             <StandingsRow
               car={car}
@@ -539,9 +545,15 @@ function StandingsRow({ car, index, sc, isClassLeader, posChange, isQuali, gridC
       style={{
         gridTemplateColumns: gridCols,
         gap: "0 4px",
-        borderLeft: `3px solid ${borderColor}`,
-        background: fl ? "rgb(168 85 247 / 0.06)" : isLapped ? "rgba(245,158,11,0.04)" : undefined,
-        opacity: car.is_stale ? 0.4 : isLapped ? 0.7 : 1,
+        borderLeft: `${car.is_player ? 4 : 3}px solid ${borderColor}`,
+        background: car.is_player
+          ? "rgb(var(--rv-accent) / 0.10)"
+          : fl
+          ? "rgb(168 85 247 / 0.08)"
+          : isLapped
+          ? "rgba(245,158,11,0.04)"
+          : undefined,
+        opacity: car.is_stale ? 0.4 : isLapped ? 0.60 : 1,
         paddingTop: sc.rowPy, paddingBottom: sc.rowPy,
         paddingLeft: sc.rowPx, paddingRight: sc.rowPx,
       }}

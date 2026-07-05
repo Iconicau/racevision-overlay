@@ -196,6 +196,7 @@ app.whenReady().then(() => {
   // Ctrl+Alt+E — toggle edit mode even when iRacing has focus
   globalShortcut.register("CommandOrControl+Alt+E", () => {
     if (overlayWin) overlayWin.webContents.send("toggle-edit-mode");
+    if (controlWin) controlWin.webContents.send("toggle-edit-mode");
   });
 
   // Ctrl+Alt+Q — quit
