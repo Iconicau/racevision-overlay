@@ -131,7 +131,7 @@ export function RelativeWidget({ relative, connected, session, track_temp_c, pla
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/10 flex-shrink-0"
         style={{ padding: `${sc.hdrPy}px ${sc.hdrPx}px` }}>
-        <span className="font-semibold text-data-muted uppercase tracking-widest" style={{ fontSize: sc.fsHeader }}>Relative</span>
+        <span className="font-bold text-data-primary uppercase tracking-widest" style={{ fontSize: sc.fsHeader }}>Relative</span>
         <div className="flex items-center gap-2">
           {track_temp_c > 0 && (
             <span className="text-data-muted" style={{ fontSize: sc.fsLabel }}>{Math.round(track_temp_c)}°C</span>
@@ -162,22 +162,33 @@ export function RelativeWidget({ relative, connected, session, track_temp_c, pla
       ) : (
         <div className="flex flex-col"
           style={{ gap: sc.rowGap, padding: `${sc.rowGap}px 4px` }}>
-          {relative.map((car, i) => (
-            <CarRow
-              key={car.car_idx}
-              car={car}
-              index={i}
-              grid={grid}
-              sc={sc}
-              showCar={showCar}
-              showSrIr={showSrIr}
-              rowStyle={rowStyle}
-              nameFormat={nameFormat}
-              nameCase={nameCase}
-              playerLaps={playerCar?.laps_completed ?? 0}
-              closingRate={closingRates.get(car.car_idx) ?? null}
-            />
-          ))}
+          {relative.map((car, i) => {
+            const prevIsPlayer = i > 0 && relative[i - 1].is_player;
+            const nextIsPlayer = i < relative.length - 1 && relative[i + 1].is_player;
+            return (
+              <div key={car.car_idx}>
+                {nextIsPlayer && (
+                  <div style={{ borderTop: "1px solid rgb(var(--rv-accent) / 0.30)", margin: `${sc.rowGap}px 0` }} />
+                )}
+                <CarRow
+                  car={car}
+                  index={i}
+                  grid={grid}
+                  sc={sc}
+                  showCar={showCar}
+                  showSrIr={showSrIr}
+                  rowStyle={rowStyle}
+                  nameFormat={nameFormat}
+                  nameCase={nameCase}
+                  playerLaps={playerCar?.laps_completed ?? 0}
+                  closingRate={closingRates.get(car.car_idx) ?? null}
+                />
+                {prevIsPlayer && (
+                  <div style={{ borderTop: "1px solid rgb(var(--rv-accent) / 0.30)", margin: `${sc.rowGap}px 0` }} />
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -253,8 +264,14 @@ function CarRow({ car, index, grid, sc, showCar, showSrIr, rowStyle, nameFormat,
       style={{
         gridTemplateColumns: grid,
         gap: "0 6px",
-        borderLeft: `3px solid ${isLapping ? "#3b82f6" : isLapped ? "#f59e0b" : borderColor}`,
-        background: isLapping ? "rgb(59 130 246 / 0.08)" : isLapped ? "rgb(245 158 11 / 0.08)" : undefined,
+        borderLeft: `${isPlayer ? 4 : 3}px solid ${isLapping ? "#3b82f6" : isLapped ? "#f59e0b" : borderColor}`,
+        background: isPlayer
+          ? "rgb(var(--rv-accent) / 0.10)"
+          : isLapping
+          ? "rgb(59 130 246 / 0.08)"
+          : isLapped
+          ? "rgb(245 158 11 / 0.08)"
+          : undefined,
         paddingTop: sc.rowPy,
         paddingBottom: sc.rowPy,
         paddingLeft: sc.rowPx,

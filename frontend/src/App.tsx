@@ -203,8 +203,8 @@ export default function App() {
         </div>
       )}
 
-      {/* Overlay canvas */}
-      <div className={`absolute left-0 right-0 bottom-0 pointer-events-none ${editMode ? "top-8" : "top-0"}`}>
+      {/* Overlay canvas — always full-screen so widget positions don't shift when toggling edit mode */}
+      <div className="absolute inset-0 pointer-events-none">
         {WIDGET_REGISTRY.map((def) => {
           const layout = layouts[def.id];
           if (!layout?.visible) return null;
